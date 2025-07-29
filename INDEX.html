@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NFT Event Ticketing</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/web3modal@2.3.2/dist/index.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+</head>
+<body>
+  <h1>NFT Event Ticketing</h1>
+
+  <button id="connectWallet">Connect Wallet</button>
+  <p><strong>Wallet Address:</strong> <span id="walletAddress">Not connected</span></p>
+
+  <h3>Buy Ticket</h3>
+  <input type="text" id="ticketURI" placeholder="Enter ticket metadata IPFS URI" />
+  <button id="buyTicketBtn">Buy Ticket</button>
+
+  <h3>Generate Ticket QR Code</h3>
+  <input type="number" id="ticketIdInput" placeholder="Enter Ticket ID" />
+  <button onclick="generateQR()">Generate QR</button>
+  <div id="qrcode"></div>
+
+  <script>
+    let provider;
+    let signer;
+    let contract;
+    let account;
+
+    const contractAddress = "YOUR_CONTRACT_ADDRESS";
+    const contractABI = [
+      // Paste your EventTicketNFT ABI here
+    ];
+
+    document.getElementById("connectWallet").addEventListener("click", async () => {
+      if (window.ethereum) {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        signer = await provider.getSigner();
+        account = await signer.getAddress();
+        document.getElementById("walletAddress").textContent = account;
+
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+      } else {
+        alert("MetaMask not found. Please install it.");
+      }
+    });
+
+    document.getElementById("buyTicketBtn").addEventListener("click", async () => {
+      const uri = document.getElementById("ticketURI").value;
+      if (!contract || !uri) return alert("Connect wallet and provide metadata URI");
+
+      const price = await contract.ticketPrice();
+      const tx = await contract.buyTicket(uri, { value: price });
+      await tx.wait();
+      alert("Ticket Purchased!");
+    });
+
+    function generateQR() {
+      const ticketId = document.getElementById("ticketIdInput").value;
+      if (!ticketId || !account || !contractAddress) {
+        alert("Missing ticket ID or wallet not connected");
+        return;
+      }
+
+      const data = JSON.stringify({
+        ticketId: ticketId,
+        owner: account,
+        contract: contractAddress
+      });
+
+      QRCode.toCanvas(document.getElementById("qrcode"), data, function (error) {
+        if (error) console.error(error);
+      });
+    }
+  </script>
+</body>
+</html>
