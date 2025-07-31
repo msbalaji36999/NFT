@@ -92,115 +92,116 @@
 
   <p class="status" id="status"></p>
 
-  <!-- Load ethers.js v5 UMD after the rest of the body to ensure correct loading -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script>
-    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
-    const contractABI = [
-      {
-        "inputs": [
-          { "internalType": "uint256", "name": "eventId", "type": "uint256" }
-        ],
-        "name": "buyTicket",
-        "outputs": [],
-        "stateMutability": "payable",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          { "internalType": "string", "name": "name", "type": "string" },
-          { "internalType": "uint256", "name": "price", "type": "uint256" },
-          { "internalType": "uint256", "name": "totalTickets", "type": "uint256" }
-        ],
-        "name": "createEvent",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "inputs": [
-          { "internalType": "uint256", "name": "eventId", "type": "uint256" }
-        ],
-        "name": "withdraw",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "inputs": [{ "internalType": "uint256", "name": "eventId", "type": "uint256" }],
-        "name": "getEvent",
-        "outputs": [
-          { "internalType": "string", "name": "", "type": "string" },
-          { "internalType": "uint256", "name": "", "type": "uint256" },
-          { "internalType": "uint256", "name": "", "type": "uint256" },
-          { "internalType": "uint256", "name": "", "type": "uint256" },
-          { "internalType": "address", "name": "", "type": "address" }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      }
-    ];
-
     let provider, signer, contract;
 
-    async function connectWallet() {
-      if (window.ethereum) {
-        try {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-          await provider.send("eth_requestAccounts", []);
-          signer = provider.getSigner();
-          contract = new ethers.Contract(contractAddress, contractABI, signer);
-          document.getElementById("status").textContent = "Wallet connected!";
-        } catch (err) {
-          console.error("Wallet connection failed", err);
-          document.getElementById("status").textContent = "Failed to connect wallet!";
+    window.addEventListener("DOMContentLoaded", () => {
+      const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
+      const contractABI = [
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" }
+          ],
+          "name": "buyTicket",
+          "outputs": [],
+          "stateMutability": "payable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            { "internalType": "string", "name": "name", "type": "string" },
+            { "internalType": "uint256", "name": "price", "type": "uint256" },
+            { "internalType": "uint256", "name": "totalTickets", "type": "uint256" }
+          ],
+          "name": "createEvent",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            { "internalType": "uint256", "name": "eventId", "type": "uint256" }
+          ],
+          "name": "withdraw",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [{ "internalType": "uint256", "name": "eventId", "type": "uint256" }],
+          "name": "getEvent",
+          "outputs": [
+            { "internalType": "string", "name": "", "type": "string" },
+            { "internalType": "uint256", "name": "", "type": "uint256" },
+            { "internalType": "uint256", "name": "", "type": "uint256" },
+            { "internalType": "uint256", "name": "", "type": "uint256" },
+            { "internalType": "address", "name": "", "type": "address" }
+          ],
+          "stateMutability": "view",
+          "type": "function"
         }
-      } else {
-        alert("MetaMask is not installed!");
-      }
-    }
+      ];
 
-    async function createEvent() {
-      const name = document.getElementById("eventName").value;
-      const price = document.getElementById("ticketPrice").value;
-      const total = document.getElementById("totalTickets").value;
+      window.connectWallet = async () => {
+        if (window.ethereum) {
+          try {
+            provider = new ethers.providers.Web3Provider(window.ethereum);
+            await provider.send("eth_requestAccounts", []);
+            signer = provider.getSigner();
+            contract = new ethers.Contract(contractAddress, contractABI, signer);
+            document.getElementById("status").textContent = "Wallet connected!";
+          } catch (error) {
+            console.error("Wallet connection error:", error);
+            document.getElementById("status").textContent = "Connection failed!";
+          }
+        } else {
+          alert("MetaMask not found! Please install MetaMask.");
+        }
+      };
 
-      if (!name || !price || !total) {
-        alert("Please fill all fields.");
-        return;
-      }
+      window.createEvent = async () => {
+        const name = document.getElementById("eventName").value;
+        const price = document.getElementById("ticketPrice").value;
+        const total = document.getElementById("totalTickets").value;
 
-      try {
-        const tx = await contract.createEvent(name, ethers.utils.parseEther(price), total);
-        document.getElementById("status").textContent = "Creating event...";
-        await tx.wait();
-        document.getElementById("status").textContent = "Event created successfully!";
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").textContent = "Transaction failed!";
-      }
-    }
+        if (!name || !price || !total) {
+          alert("Please fill all fields.");
+          return;
+        }
 
-    async function buyTicket() {
-      const eventId = document.getElementById("buyEventId").value;
-      if (!eventId) {
-        alert("Enter an event ID");
-        return;
-      }
+        try {
+          const tx = await contract.createEvent(name, ethers.utils.parseEther(price), total);
+          document.getElementById("status").textContent = "Creating event...";
+          await tx.wait();
+          document.getElementById("status").textContent = "Event created successfully!";
+        } catch (err) {
+          console.error(err);
+          document.getElementById("status").textContent = "Transaction failed!";
+        }
+      };
 
-      try {
-        const event = await contract.getEvent(eventId);
-        const price = event[1];
+      window.buyTicket = async () => {
+        const eventId = document.getElementById("buyEventId").value;
+        if (!eventId) {
+          alert("Enter an event ID");
+          return;
+        }
 
-        const tx = await contract.buyTicket(eventId, { value: price });
-        document.getElementById("status").textContent = "Buying ticket...";
-        await tx.wait();
-        document.getElementById("status").textContent = "Ticket purchased!";
-      } catch (err) {
-        console.error(err);
-        document.getElementById("status").textContent = "Purchase failed!";
-      }
-    }
+        try {
+          const event = await contract.getEvent(eventId);
+          const price = event[1];
+
+          const tx = await contract.buyTicket(eventId, { value: price });
+          document.getElementById("status").textContent = "Buying ticket...";
+          await tx.wait();
+          document.getElementById("status").textContent = "Ticket purchased!";
+        } catch (err) {
+          console.error(err);
+          document.getElementById("status").textContent = "Purchase failed!";
+        }
+      };
+    });
   </script>
 </body>
 </html>
