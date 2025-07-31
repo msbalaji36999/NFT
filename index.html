@@ -1,82 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NFT Event Ticketing</title>
+  <meta charset="UTF-8">
+  <title>NFT Event Ticketing System</title>
   <style>
     body {
-      margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
+      background: linear-gradient(to right, #141e30, #243b55);
+      color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
     }
 
     h1 {
       text-align: center;
-      margin-bottom: 1rem;
-    }
-
-    button {
-      background-color: #28a745;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      margin: 1rem 0;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #218838;
+      margin-top: 10px;
     }
 
     .container {
-      background-color: rgba(255, 255, 255, 0.1);
+      max-width: 700px;
+      margin: 30px auto;
+      background: #1f2a38;
+      padding: 30px;
       border-radius: 15px;
-      padding: 2rem;
-      max-width: 600px;
-      width: 100%;
-      margin-top: 1rem;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 15px #000;
     }
 
-    input {
+    input, button {
       width: 100%;
-      padding: 0.8rem;
-      margin: 0.5rem 0;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border-radius: 5px;
       border: none;
-      border-radius: 8px;
       font-size: 1rem;
     }
 
-    label {
-      margin-top: 1rem;
-      display: block;
+    input {
+      background: #2d3a4b;
+      color: #fff;
     }
 
-    .status {
-      margin-top: 1rem;
-      font-style: italic;
-      color: #ffd700;
+    button {
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    #status {
+      text-align: center;
+      padding-top: 10px;
+      font-weight: bold;
+    }
+
+    .connect-btn {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .connect-btn button {
+      width: auto;
+      padding: 10px 20px;
+      background-color: #2196F3;
+    }
+
+    .wallet-address {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
+
   <h1>NFT Event Ticketing System</h1>
-  <button onclick="connectWallet()">Connect Wallet</button>
+
+  <div class="connect-btn">
+    <button onclick="connectWallet()">Connect Wallet</button>
+  </div>
+
+  <div class="wallet-address" id="walletAddress"></div>
 
   <div class="container">
-    <h2>Create Event</h2>
-    <label>Event Name:</label>
-    <input type="text" id="eventName" placeholder="Enter event name" />
-    <label>Price (in MATIC):</label>
-    <input type="number" id="ticketPrice" placeholder="Price per ticket" />
-    <label>Total Tickets:</label>
-    <input type="number" id="totalTickets" placehol
+    <h2>Create New Event</h2>
+    <input type="text" id="eventName" placeholder="Event Name" />
+    <input type="number" id="ticketPrice" placeholder="Ticket Price in MATIC" />
+    <input type="number" id="totalTickets" placeholder="Total Tickets" />
+    <button onclick="createEvent()">Create Event</button>
+  </div>
+
+  <div class="container">
+    <h2>Buy Ticket</h2>
+    <input type="number" id="eventIdBuy" placeholder="Event ID to Buy" />
+    <button onclick="buyTicket()">Buy Ticket</button>
+  </div>
+
+  <div id="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.min.js"></script>
+  <script>
+    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
+    const abi = [
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "eventId", "type": "uint256" }
+        ],
+        "name": "buyTicket",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "string", "name": "name", "type": "string" },
+          { "internalType": "uint256", "name": "price", "type": "uint256" },
+          { "internalType": "uint256", "name": "totalTickets", "type": "uint256" }
+        ],
+        "name": "createEvent",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "eventId", "type": "uint256" }
+        ],
+        "name": "getEvent",
+        "outputs": [
+          { "internalType": "string", "name": "", "type": "string" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
+
+    let provider, signer, contract;
+
+    async function connectWallet() {
+      if (window.ethereum) {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        const address = await signer.getAddress();
+        document.getElementById("walletAddress").innerText = "Connected: " + address;
+        contract = new ethers.Contract(contractAddress, abi, signer);
+        document.getElementById("status").textContent = "Wallet connected!";
+      } else {
+        alert("MetaMask not detected!");
+      }
+    }
+
+    async function createEvent() {
+      const name = document.getElementById("eventName").value;
+      const price = document.getElementById("ticketPrice").value;
+      const total = document.getElementById("totalTickets").value;
+
+      if (!name || !price || !total) {
+        alert("Please fill all fields.");
+        return;
+      }
+
+      try {
+        const tx = await contract.createEvent(name, ethers.parseEther(price), total);
+        document.getElementById("status").textContent = "Creating event...";
+        await tx.wait();
+        document.getElementById("status").textContent = "Event created successfully!";
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").textContent = "Error creating event!";
+      }
+    }
+
+    async function buyTicket() {
+      const eventId = document.getElementById("eventIdBuy").value;
+      if (!eventId) {
+        alert("Enter event ID.");
+        return;
+      }
+
+      try {
+        const eventData = await contract.getEvent(eventId);
+        const price = eventData[1];
+        const tx = await contract.buyTicket(eventId, { value: price });
+        document.getElementById("status").textContent = "Buying ticket...";
+        await tx.wait();
+        document.getElementById("status").textContent = "Ticket purchased!";
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").textContent = "Error buying ticket!";
+      }
+    }
+  </script>
+</body>
+</html>
