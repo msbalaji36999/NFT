@@ -1,384 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NFT Event Ticketing System</title>
-  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NFT Event Ticketing</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #f0f0f0, #d4eaff);
       margin: 0;
-      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
     }
-    .container {
-      max-width: 800px;
-      margin: auto;
-      padding: 20px;
-      background: white;
-      box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      border-radius: 15px;
-    }
+
     h1 {
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 1rem;
     }
+
     button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      background-color: #007bff;
+      background-color: #28a745;
       color: white;
       border: none;
+      padding: 10px 20px;
+      margin: 1rem 0;
       border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      font-size: 1rem;
+      transition: background 0.3s ease;
     }
+
     button:hover {
-      background-color: #0056b3;
+      background-color: #218838;
     }
-    input, select {
-      padding: 10px;
-      margin-top: 10px;
+
+    .container {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 2rem;
+      max-width: 600px;
       width: 100%;
-      border-radius: 5px;
-      border: 1px solid #ccc;
+      margin-top: 1rem;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
     }
-    .section {
-      margin-top: 30px;
+
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
     }
-    #status {
-      margin-top: 20px;
-      padding: 10px;
-      background: #f1f1f1;
-      border-left: 4px solid #007bff;
+
+    label {
+      margin-top: 1rem;
+      display: block;
+    }
+
+    .status {
+      margin-top: 1rem;
+      font-style: italic;
+      color: #ffd700;
     }
   </style>
 </head>
 <body>
+  <h1>NFT Event Ticketing System</h1>
+  <button onclick="connectWallet()">Connect Wallet</button>
+
   <div class="container">
-    <h1>NFT Event Ticketing System</h1>
-    <button onclick="connectWallet()">Connect Wallet</button>
-    <div id="status">Not connected</div>
-
-    <div class="section">
-      <h3>Create Event</h3>
-      <input id="eventName" placeholder="Event Name" />
-      <input id="eventPrice" placeholder="Ticket Price (in MATIC)" type="number" />
-      <input id="eventTotal" placeholder="Total Tickets" type="number" />
-      <button onclick="createEvent()">Create</button>
-    </div>
-
-    <div class="section">
-      <h3>Buy Ticket</h3>
-      <input id="buyEventId" placeholder="Event ID" type="number" />
-      <button onclick="buyTicket()">Buy Ticket</button>
-    </div>
-
-    <div class="section">
-      <h3>Get Event Info</h3>
-      <input id="getEventId" placeholder="Event ID" type="number" />
-      <button onclick="getEvent()">Get Info</button>
-      <div id="eventDetails"></div>
-    </div>
-  </div>
-
-  <script>
-    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
-    const contractABI = [[
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "eventId",
-				"type": "uint256"
-			}
-		],
-		"name": "buyTicket",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "totalTickets",
-				"type": "uint256"
-			}
-		],
-		"name": "createEvent",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "eventId",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "totalTickets",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"name": "EventCreated",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "eventId",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "uint256",
-				"name": "ticketId",
-				"type": "uint256"
-			},
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "buyer",
-				"type": "address"
-			}
-		],
-		"name": "TicketPurchased",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "eventId",
-				"type": "uint256"
-			}
-		],
-		"name": "withdraw",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "events",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "totalTickets",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "ticketsSold",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address payable",
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "eventId",
-				"type": "uint256"
-			}
-		],
-		"name": "getEvent",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getNextEventId",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "tickets",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-]];
-
-    let web3;
-    let contract;
-    let account;
-
-    async function connectWallet() {
-      if (window.ethereum) {
-        web3 = new Web3(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        const accounts = await web3.eth.getAccounts();
-        account = accounts[0];
-        contract = new web3.eth.Contract(contractABI, contractAddress);
-        document.getElementById("status").innerText = "Connected: " + account;
-      } else {
-        alert("Please install MetaMask to use this app.");
-      }
-    }
-
-    async function createEvent() {
-      const name = document.getElementById("eventName").value;
-      const price = web3.utils.toWei(document.getElementById("eventPrice").value, "ether");
-      const total = document.getElementById("eventTotal").value;
-
-      try {
-        await contract.methods.createEvent(name, price, total).send({ from: account });
-        alert("Event created successfully!");
-      } catch (err) {
-        console.error(err);
-        alert("Error creating event.");
-      }
-    }
-
-    async function buyTicket() {
-      const eventId = document.getElementById("buyEventId").value;
-      try {
-        const event = await contract.methods.getEvent(eventId).call();
-        const price = event[1];
-        await contract.methods.buyTicket(eventId).send({ from: account, value: price });
-        alert("Ticket purchased!");
-      } catch (err) {
-        console.error(err);
-        alert("Failed to buy ticket.");
-      }
-    }
-
-    async function getEvent() {
-      const id = document.getElementById("getEventId").value;
-      try {
-        const e = await contract.methods.getEvent(id).call();
-        const html = `
-          <p><strong>Name:</strong> ${e[0]}</p>
-          <p><strong>Price:</strong> ${web3.utils.fromWei(e[1], "ether")} MATIC</p>
-          <p><strong>Total Tickets:</strong> ${e[2]}</p>
-          <p><strong>Tickets Sold:</strong> ${e[3]}</p>
-          <p><strong>Owner:</strong> ${e[4]}</p>
-        `;
-        document.getElementById("eventDetails").innerHTML = html;
-      } catch (err) {
-        console.error(err);
-        alert("Error fetching event.");
-      }
-    }
-  </script>
-</body>
-</html>
+    <h2>Create Event</h2>
+    <label>Event Name:</label>
+    <input type="text" id="eventName" placeholder="Enter event name" />
+    <label>Price (in MATIC):</label>
+    <input type="number" id="ticketPrice" placeholder="Price per ticket" />
+    <label>Total Tickets:</label>
+    <input type="number" id="totalTickets" placehol
