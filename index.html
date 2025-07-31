@@ -2,65 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Event Ticketing System</title>
+  <title>Blockchain Event Ticketing</title>
   <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
   <style>
     body {
-      background: #121212;
-      color: #f0f0f0;
+      background: #0f0f0f;
+      color: #ffffff;
       font-family: Arial, sans-serif;
-      padding: 30px;
+      padding: 40px;
       text-align: center;
     }
-    h1 { color: #00ffd1; }
-    .box {
+    h1 {
+      color: #00ffcc;
+    }
+    .container {
       background: #1e1e1e;
-      padding: 20px;
+      padding: 25px;
       border-radius: 10px;
-      margin: 20px auto;
-      width: 300px;
+      margin: 30px auto;
+      width: 350px;
     }
     input, button {
       margin: 8px 0;
       padding: 10px;
       width: 90%;
-      border-radius: 5px;
+      border-radius: 6px;
       border: none;
+      font-size: 14px;
     }
     button {
-      background-color: #00ffd1;
+      background-color: #00ffcc;
       color: black;
       font-weight: bold;
       cursor: pointer;
     }
+    button:hover {
+      background-color: #00ccaa;
+    }
+    #walletAddress {
+      margin-top: 10px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>🎫 Event Ticketing</h1>
+  <h1>🎫 NFT Event Ticketing System</h1>
   <button onclick="connectWallet()">🔗 Connect Wallet</button>
   <p id="walletAddress">Wallet not connected</p>
 
-  <div class="box">
-    <h3>Create Event</h3>
+  <div class="container">
+    <h3>➕ Create New Event</h3>
     <input id="eventName" placeholder="Event Name" />
-    <input id="eventPrice" type="number" placeholder="Price in ETH" />
+    <input id="eventPrice" type="number" placeholder="Ticket Price (ETH)" />
     <input id="eventTickets" type="number" placeholder="Total Tickets" />
-    <button onclick="createEvent()">➕ Create</button>
+    <button onclick="createEvent()">Create Event</button>
   </div>
 
-  <div class="box">
-    <h3>Buy Ticket</h3>
+  <div class="container">
+    <h3>🎟 Buy Ticket</h3>
     <input id="buyEventId" type="number" placeholder="Event ID" />
-    <button onclick="buyTicket()">🎟 Buy</button>
+    <button onclick="buyTicket()">Buy Ticket</button>
   </div>
 
   <script>
+    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
+    const abi = [ /* Your full ABI below */ 
+      {
+        "inputs": [{"internalType":"uint256","name":"eventId","type":"uint256"}],
+        "name":"buyTicket","outputs":[],"stateMutability":"payable","type":"function"
+      },
+      {
+        "inputs":[
+          {"internalType":"string","name":"name","type":"string"},
+          {"internalType":"uint256","name":"price","type":"uint256"},
+          {"internalType":"uint256","name":"totalTickets","type":"uint256"}
+        ],
+        "name":"createEvent","outputs":[],"stateMutability":"nonpayable","type":"function"
+      },
+      {
+        "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],
+        "name":"getEvent",
+        "outputs":[
+          {"internalType":"string","name":"","type":"string"},
+          {"internalType":"uint256","name":"","type":"uint256"},
+          {"internalType":"uint256","name":"","type":"uint256"},
+          {"internalType":"uint256","name":"","type":"uint256"},
+          {"internalType":"address","name":"","type":"address"}
+        ],
+        "stateMutability":"view","type":"function"
+      }
+    ];
+
     let provider;
     let signer;
     let contract;
-
-    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
-    const abi = [/* PASTE YOUR ABI HERE EXACTLY AS YOU SENT ABOVE */];
 
     async function connectWallet() {
       if (window.ethereum) {
@@ -69,43 +104,50 @@
           await provider.send("eth_requestAccounts", []);
           signer = await provider.getSigner();
           const address = await signer.getAddress();
-          document.getElementById("walletAddress").textContent = "Connected: " + address;
           contract = new ethers.Contract(contractAddress, abi, signer);
+          document.getElementById("walletAddress").textContent = `Connected: ${address}`;
         } catch (err) {
           console.error(err);
-          alert("❌ Failed to connect wallet.");
+          alert("Failed to connect wallet.");
         }
       } else {
-        alert("🦊 MetaMask not found. Please install it.");
+        alert("MetaMask is not installed.");
       }
     }
 
     async function createEvent() {
-      if (!contract) return alert("Connect wallet first.");
-      const name = document.getElementById("eventName").value;
-      const price = document.getElementById("eventPrice").value;
-      const tickets = document.getElementById("eventTickets").value;
+      if (!contract) return alert("Please connect your wallet first.");
 
-      if (!name || !price || !tickets) return alert("Fill all fields.");
+      const name = document.getElementById("eventName").value;
+      const priceEth = document.getElementById("eventPrice").value;
+      const total = document.getElementById("eventTickets").value;
+
+      if (!name || !priceEth || !total) {
+        return alert("Fill in all fields.");
+      }
 
       try {
-        const tx = await contract.createEvent(name, ethers.parseEther(price), tickets);
+        const tx = await contract.createEvent(
+          name,
+          ethers.parseEther(priceEth),
+          total
+        );
         await tx.wait();
-        alert("✅ Event created!");
+        alert("✅ Event created successfully!");
       } catch (err) {
         console.error(err);
-        alert("❌ Event creation failed.");
+        alert("❌ Failed to create event.");
       }
     }
 
     async function buyTicket() {
-      if (!contract) return alert("Connect wallet first.");
+      if (!contract) return alert("Please connect your wallet first.");
       const eventId = document.getElementById("buyEventId").value;
-      if (!eventId) return alert("Enter event ID.");
+      if (!eventId) return alert("Enter a valid event ID.");
 
       try {
         const event = await contract.getEvent(eventId);
-        const price = event[1]; // price in wei
+        const price = event[1]; // event[1] is the ticket price
         const tx = await contract.buyTicket(eventId, { value: price });
         await tx.wait();
         alert("✅ Ticket purchased!");
