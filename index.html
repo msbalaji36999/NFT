@@ -2,106 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NFT Event Ticketing</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
+      background: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: #0e0e0e;
-      color: #f0f0f0;
-      font-family: 'Segoe UI', sans-serif;
     }
     header {
-      background: #1c1c1c;
+      background: #1f1f1f;
       padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      text-align: center;
     }
-    header h1 {
+    h1 {
       margin: 0;
-      font-size: 1.5em;
-    }
-    button {
-      padding: 10px 20px;
-      background: #ff4c4c;
-      border: none;
-      color: white;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background: #e94141;
     }
     .container {
-      max-width: 800px;
-      margin: 40px auto;
-      display: grid;
-      gap: 30px;
-    }
-    .card {
-      background: #222;
+      max-width: 600px;
+      margin: 30px auto;
       padding: 20px;
+      background: #1e1e1e;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(255, 76, 76, 0.3);
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
     }
     input {
-      padding: 10px;
-      width: 100%;
-      margin-bottom: 15px;
-      border: 1px solid #444;
-      border-radius: 6px;
-      background: #2d2d2d;
+      background: #2c2c2c;
       color: white;
     }
-    label {
-      margin-bottom: 5px;
-      display: block;
-      font-weight: bold;
+    button {
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
     }
     #status {
-      margin-top: 10px;
-      color: #00ffae;
+      margin-top: 15px;
+      color: lightgreen;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>🎫 NFT Event Ticketing</h1>
+    <h1>NFT Event Ticketing System</h1>
     <button onclick="connectWallet()">Connect Wallet</button>
   </header>
 
   <div class="container">
-    
-    <div class="card">
-      <h2>Create Event</h2>
-      <label>Event Name</label>
-      <input type="text" id="eventName" placeholder="e.g., Blockchain Summit" />
-      <label>Ticket Price (in MATIC)</label>
-      <input type="number" id="ticketPrice" placeholder="e.g., 0.01" />
-      <label>Total Tickets</label>
-      <input type="number" id="totalTickets" placeholder="e.g., 100" />
-      <button onclick="createEvent()">Create Event</button>
-    </div>
+    <h2>Create Event</h2>
+    <input id="eventName" placeholder="Event Name">
+    <input id="ticketPrice" placeholder="Ticket Price (in MATIC)">
+    <input id="totalTickets" placeholder="Total Tickets">
+    <button onclick="createEvent()">Create Event</button>
 
-    <div class="card">
-      <h2>Buy Ticket</h2>
-      <label>Event ID</label>
-      <input type="number" id="eventId" placeholder="Enter event ID to buy ticket" />
-      <button onclick="buyTicket()">Buy Ticket</button>
-    </div>
+    <h2>Buy Ticket</h2>
+    <input id="eventId" placeholder="Event ID to buy">
+    <button onclick="buyTicket()">Buy Ticket</button>
 
-    <p id="status"></p>
+    <div id="status"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.1/dist/ethers.min.js"></script>
+  <!-- Use Ethers v5 (v6 may cause breaking changes) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
   <script>
     let provider, signer, contract;
 
-    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
+    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce"; // Replace if needed
     const abi = [
       {
         "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],
@@ -127,70 +106,65 @@
     ];
 
     async function connectWallet() {
-      try {
-        if (window.ethereum) {
-          provider = new ethers.BrowserProvider(window.ethereum);
-          await provider.send("eth_requestAccounts", []);
-          signer = await provider.getSigner();
-          contract = new ethers.Contract(contractAddress, abi, signer);
-          document.getElementById("status").textContent = "✅ Wallet connected!";
-        } else {
-          alert("MetaMask not detected. Install it first.");
-        }
-      } catch (err) {
-        console.error("Wallet connection failed:", err);
-        document.getElementById("status").textContent = "❌ Wallet connection failed.";
+      if (window.ethereum) {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        contract = new ethers.Contract(contractAddress, abi, signer);
+        document.getElementById("status").innerText = "✅ Wallet connected";
+        console.log("Wallet connected");
+      } else {
+        alert("Please install MetaMask!");
       }
     }
 
     async function createEvent() {
+      if (!contract) {
+        alert("Connect wallet first!");
+        return;
+      }
       const name = document.getElementById("eventName").value;
       const price = document.getElementById("ticketPrice").value;
       const total = document.getElementById("totalTickets").value;
 
-      if (!name || !price || !total) {
-        alert("Fill all fields");
-        return;
-      }
-
-      if (!contract) {
-        alert("Please connect your wallet first.");
-        return;
-      }
-
       try {
         const tx = await contract.createEvent(
           name,
-          ethers.parseEther(price),
+          ethers.utils.parseEther(price),
           parseInt(total)
         );
-        document.getElementById("status").textContent = "⏳ Creating event...";
+        document.getElementById("status").innerText = "Creating event...";
         await tx.wait();
-        document.getElementById("status").textContent = "✅ Event created successfully!";
+        document.getElementById("status").innerText = "✅ Event created!";
       } catch (err) {
-        console.error("Create event failed:", err);
-        document.getElementById("status").textContent = "❌ Failed to create event.";
+        console.error(err);
+        document.getElementById("status").innerText = "❌ Failed to create event.";
       }
     }
 
     async function buyTicket() {
+      if (!contract) {
+        alert("Connect wallet first!");
+        return;
+      }
       const eventId = document.getElementById("eventId").value;
-      if (!eventId) return alert("Enter event ID");
 
       try {
-        const eventDetails = await contract.getEvent(eventId);
-        const ticketPrice = eventDetails[1];
+        const eventData = await contract.getEvent(eventId);
+        const ticketPrice = eventData[1]; // price is second item
+
         const tx = await contract.buyTicket(eventId, {
-          value: ticketPrice,
+          value: ticketPrice
         });
-        document.getElementById("status").textContent = "⏳ Buying ticket...";
+        document.getElementById("status").innerText = "Buying ticket...";
         await tx.wait();
-        document.getElementById("status").textContent = "✅ Ticket purchased!";
+        document.getElementById("status").innerText = "✅ Ticket purchased!";
       } catch (err) {
-        console.error("Buy ticket failed:", err);
-        document.getElementById("status").textContent = "❌ Failed to buy ticket.";
+        console.error(err);
+        document.getElementById("status").innerText = "❌ Failed to buy ticket.";
       }
     }
   </script>
+
 </body>
 </html>
