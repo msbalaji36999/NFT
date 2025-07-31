@@ -1,92 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Connect to Amoy Testnet</title>
+  <meta charset="UTF-8">
+  <title>Event Ticketing dApp | Polygon Amoy</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
       margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #7b2ff7, #f107a3);
+      color: white;
+      padding: 40px 20px;
+      text-align: center;
     }
     h1 {
-      margin-top: 60px;
-      font-size: 2em;
-      color: #333;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
     }
-    #connectButton {
-      margin-top: 20px;
-      padding: 12px 24px;
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+    }
+    button, input {
+      margin: 8px;
+      padding: 12px;
       font-size: 16px;
-      background-color: #8247e5;
-      color: white;
-      border: none;
       border-radius: 8px;
+      border: none;
+    }
+    button {
+      background: #fff;
+      color: #333;
       cursor: pointer;
     }
-    #connectButton:hover {
-      background-color: #5d34b3;
+    button:hover {
+      background: #f1f1f1;
     }
-    #walletAddress {
-      margin-top: 20px;
+    input {
+      width: 200px;
+    }
+    #walletAddress, #eventDetails {
+      margin-top: 15px;
       font-size: 14px;
-      color: #555;
+      color: #eee;
     }
   </style>
 </head>
 <body>
 
-  <h1>Polygon Amoy Testnet Connect</h1>
-  <button id="connectButton">Connect Wallet</button>
-  <div id="walletAddress"></div>
+  <h1>🎟️ NFT Event Ticketing</h1>
+  <p>Polygon Amoy Testnet</p>
+
+  <div class="container">
+    <button onclick="connectWallet()">🔗 Connect Wallet</button>
+    <div id="walletAddress"></div>
+
+    <hr style="margin: 30px 0; border: 1px solid #ffffff30;">
+
+    <h3>Create New Event</h3>
+    <input type="text" id="eventName" placeholder="Event Name" />
+    <input type="number" id="eventPrice" placeholder="Price (in MATIC)" />
+    <input type="number" id="eventTotal" placeholder="Total Tickets" />
+    <br>
+    <button onclick="createEvent()">➕ Create Event</button>
+
+    <hr style="margin: 30px 0; border: 1px solid #ffffff30;">
+
+    <h3>Buy Ticket</h3>
+    <input type="number" id="eventIdBuy" placeholder="Event ID" />
+    <br>
+    <button onclick="buyTicket()">💰 Buy Ticket</button>
+
+    <hr style="margin: 30px 0; border: 1px solid #ffffff30;">
+
+    <h3>Get Event Info</h3>
+    <input type="number" id="eventIdView" placeholder="Event ID" />
+    <br>
+    <button onclick="getEvent()">📄 View Event</button>
+    <div id="eventDetails"></div>
+  </div>
 
   <script>
-    const connectButton = document.getElementById('connectButton');
-    const walletAddressDiv = document.getElementById('walletAddress');
+    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
+    const contractABI = YOUR_ABI_HERE;
 
-    const amoyNetwork = {
-      chainId: '0x13882', // 80002 in hex
-      chainName: 'Polygon Amoy Testnet',
-      nativeCurrency: {
-        name: 'MATIC',
-        symbol: 'MATIC',
-        decimals: 18
-      },
-      rpcUrls: ['https://rpc-amoy.polygon.technology/'],
-      blockExplorerUrls: ['https://www.oklink.com/amoy']
-    };
+    let provider, signer, contract;
+
+    const walletDiv = document.getElementById('walletAddress');
+    const eventDetailsDiv = document.getElementById('eventDetails');
 
     async function connectWallet() {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          // Request wallet connection
-          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-
-          // Switch to Amoy Testnet
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [amoyNetwork],
-          });
-
-          walletAddressDiv.textContent = 'Connected: ' + accounts[0];
-        } catch (error) {
-          console.error('Error connecting:', error);
-          alert('Failed to connect. Check console for details.');
-        }
+      if (window.ethereum) {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+        const address = await signer.getAddress();
+        walletDiv.textContent = "✅ Connected: " + address;
       } else {
-        alert('MetaMask is not installed. Please install MetaMask to continue.');
+        alert("Please install MetaMask.");
       }
     }
 
-    connectButton.addEventListener('click', connectWallet);
-  </script>
+    async function createEvent() {
+      const name = document.getElementById('eventName').value;
+      const price = document.getElementById('eventPrice').value;
+      const total = document.getElementById('eventTotal').value;
+      if (!name || !price || !total) return alert("Fill all fields.");
 
+      try {
+        const tx = await contract.createEvent(name, ethers.parseEther(price), total);
+        await tx.wait();
+        alert("✅ Event created!");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Event creation failed.");
+      }
+    }
+
+    async function buyTicket() {
+      const id = document.getElementById('eventIdBuy').value;
+      if (!id) return alert("Enter event ID.");
+
+      try {
+        const event = await contract.getEvent(id);
+        const price = event[1];
+        const tx = await contract.buyTicket(id, { value: price });
+        await tx.wait();
+        alert("✅ Ticket purchased!");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Ticket purchase failed.");
+      }
+    }
+
+    async function getEvent() {
+      const id = document.getElementById('eventIdView').value;
+      if (!id) return alert("Enter event ID.");
+
+      try {
+        const event = await contract.getEvent(id);
+        eventDetailsDiv.innerHTML = `
+          🆔 ID: ${id}<br>
+          🏷️ Name: ${event[0]}<br>
+          💸 Price: ${ethers.formatEther(event[1])} MATIC<br>
+          🎟️ Total Tickets: ${event[2]}<br>
+          🎫 Sold: ${event[3]}<br>
+          👤 Owner: ${event[4]}
+        `;
+      } catch (err) {
+        console.error(err);
+        alert("❌ Could not fetch event.");
+      }
+    }
+
+    // Insert your ABI directly below
+    const YOUR_ABI_HERE = [
+      {
+        "inputs": [{ "internalType": "uint256", "name": "eventId", "type": "uint256" }],
+        "name": "buyTicket",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "string", "name": "name", "type": "string" },
+          { "internalType": "uint256", "name": "price", "type": "uint256" },
+          { "internalType": "uint256", "name": "totalTickets", "type": "uint256" }
+        ],
+        "name": "createEvent",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [{ "internalType": "uint256", "name": "eventId", "type": "uint256" }],
+        "name": "getEvent",
+        "outputs": [
+          { "internalType": "string", "name": "", "type": "string" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
+  </script>
 </body>
 </html>
