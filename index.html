@@ -1,179 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NFT Event Ticketing System</title>
+  <meta charset="UTF-8">
+  <title>Event Ticketing dApp | Polygon Amoy</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.umd.min.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
     body {
-      background: linear-gradient(135deg, #141e30, #243b55);
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #7b2ff7, #f107a3);
+      color: white;
       padding: 40px 20px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1000px;
-      background-color: rgba(255, 255, 255, 0.05);
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(8px);
-    }
-
-    h1 {
       text-align: center;
-      font-size: 3rem;
+    }
+    h1 {
+      font-size: 2.5rem;
       margin-bottom: 10px;
     }
-
-    #connectWallet {
-      display: block;
-      margin: 10px auto 30px auto;
-      padding: 12px 24px;
-      background: #00c9a7;
-      border: none;
-      color: white;
-      font-size: 1rem;
-      font-weight: bold;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: background 0.3s;
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
     }
-
-    #connectWallet:hover {
-      background: #009e84;
-    }
-
-    .events {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-    }
-
-    .event-card {
-      background: #1e293b;
-      padding: 20px;
-      border-radius: 15px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-      transition: transform 0.2s ease;
-    }
-
-    .event-card:hover {
-      transform: scale(1.03);
-    }
-
-    .event-image {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 10px;
-      margin-bottom: 15px;
-    }
-
-    .event-card h3 {
-      margin-bottom: 10px;
-      font-size: 1.4rem;
-      color: #00d9ff;
-    }
-
-    .event-card p {
-      margin-bottom: 8px;
-      font-size: 0.95rem;
-      color: #d1d5db;
-    }
-
-    .buy-btn {
-      padding: 10px 18px;
-      background-color: #ff4d4d;
-      border: none;
+    button, input {
+      margin: 8px;
+      padding: 12px;
+      font-size: 16px;
       border-radius: 8px;
-      color: white;
-      font-weight: bold;
+      border: none;
+    }
+    button {
+      background: #fff;
+      color: #333;
       cursor: pointer;
-      margin-top: 10px;
     }
-
-    .buy-btn:hover {
-      background-color: #e03636;
+    button:hover {
+      background: #f1f1f1;
     }
-
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 2rem;
-      }
+    input {
+      width: 200px;
+    }
+    #walletAddress, #eventDetails {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #eee;
     }
   </style>
 </head>
 <body>
+
+  <h1>🎟️ NFT Event Ticketing</h1>
+  <p>Polygon Amoy Testnet</p>
+
   <div class="container">
-    <h1>NFT Event Ticketing System</h1>
-    <button id="connectWallet">Connect Wallet</button>
+    <button onclick="connectWallet()">🔗 Connect Wallet</button>
+    <div id="walletAddress"></div>
 
-    <div class="events">
-      <!-- Event 1 -->
-      <div class="event-card">
-        <img src="https://source.unsplash.com/400x200/?concert" alt="Concert" class="event-image">
-        <h3>Live Concert 2025</h3>
-        <p>Date: Aug 10, 2025</p>
-        <p>Location: Bangalore</p>
-        <p>Price: 0.02 ETH</p>
-        <button class="buy-btn">Buy Ticket</button>
-      </div>
+    <hr style="margin: 30px 0; border: 1px solid #ffffff30;">
 
-      <!-- Event 2 -->
-      <div class="event-card">
-        <img src="https://source.unsplash.com/400x200/?blockchain" alt="Blockchain Event" class="event-image">
-        <h3>Blockchain Expo</h3>
-        <p>Date: Sep 12, 2025</p>
-        <p>Location: Hyderabad</p>
-        <p>Price: 0.01 ETH</p>
-        <button class="buy-btn">Buy Ticket</button>
-      </div>
+    <h3>Create New Event</h3>
+    <input type="text" id="eventName" placeholder="Event Name" />
+    <input type="number" id="eventPrice" placeholder="Price (in MATIC)" />
+    <input type="number" id="eventTotal" placeholder="Total Tickets" />
+    <br>
+    <button onclick="createEvent()">➕ Create Event</button>
 
-      <!-- Event 3 -->
-      <div class="event-card">
-        <img src="https://source.unsplash.com/400x200/?festival" alt="Festival" class="event-image">
-        <h3>Crypto Music Festival</h3>
-        <p>Date: Oct 5, 2025</p>
-        <p>Location: Mumbai</p>
-        <p>Price: 0.05 ETH</p>
-        <button class="buy-btn">Buy Ticket</button>
-      </div>
-    </div>
+    <hr style="margin: 30px 0; border: 1px solid #ffffff30;">
+
+    <h3>Buy Ticket</h3>
+    <input type="number" id="eventIdBuy" placeholder="Event ID" />
+    <br>
+    <button onclick="buyTicket()">💰 Buy Ticket</button>
+
+    <hr style="margin: 30px 0; border: 1px solid #ffffff30;">
+
+    <h3>Get Event Info</h3>
+    <input type="number" id="eventIdView" placeholder="Event ID" />
+    <br>
+    <button onclick="getEvent()">📄 View Event</button>
+    <div id="eventDetails"></div>
   </div>
 
   <script>
-    const connectButton = document.getElementById("connectWallet");
+    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
+    const contractABI = YOUR_ABI_HERE;
+
+    let provider, signer, contract;
+
+    const walletDiv = document.getElementById('walletAddress');
+    const eventDetailsDiv = document.getElementById('eventDetails');
 
     async function connectWallet() {
       if (window.ethereum) {
-        try {
-          const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-          const address = accounts[0];
-          connectButton.textContent = `Connected: ${address.slice(0, 6)}...${address.slice(-4)}`;
-          connectButton.disabled = true;
-          connectButton.style.background = "#1f2937";
-        } catch (err) {
-          console.error("User denied wallet connection", err);
-        }
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+        const address = await signer.getAddress();
+        walletDiv.textContent = "✅ Connected: " + address;
       } else {
-        alert("MetaMask not detected. Please install MetaMask.");
+        alert("Please install MetaMask.");
       }
     }
 
-    connectButton.addEventListener("click", connectWallet);
+    async function createEvent() {
+      const name = document.getElementById('eventName').value;
+      const price = document.getElementById('eventPrice').value;
+      const total = document.getElementById('eventTotal').value;
+      if (!name || !price || !total) return alert("Fill all fields.");
+
+      try {
+        const tx = await contract.createEvent(name, ethers.parseEther(price), total);
+        await tx.wait();
+        alert("✅ Event created!");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Event creation failed.");
+      }
+    }
+
+    async function buyTicket() {
+      const id = document.getElementById('eventIdBuy').value;
+      if (!id) return alert("Enter event ID.");
+
+      try {
+        const event = await contract.getEvent(id);
+        const price = event[1];
+        const tx = await contract.buyTicket(id, { value: price });
+        await tx.wait();
+        alert("✅ Ticket purchased!");
+      } catch (err) {
+        console.error(err);
+        alert("❌ Ticket purchase failed.");
+      }
+    }
+
+    async function getEvent() {
+      const id = document.getElementById('eventIdView').value;
+      if (!id) return alert("Enter event ID.");
+
+      try {
+        const event = await contract.getEvent(id);
+        eventDetailsDiv.innerHTML = `
+          🆔 ID: ${id}<br>
+          🏷️ Name: ${event[0]}<br>
+          💸 Price: ${ethers.formatEther(event[1])} MATIC<br>
+          🎟️ Total Tickets: ${event[2]}<br>
+          🎫 Sold: ${event[3]}<br>
+          👤 Owner: ${event[4]}
+        `;
+      } catch (err) {
+        console.error(err);
+        alert("❌ Could not fetch event.");
+      }
+    }
+
+    // Insert your ABI directly below
+    const YOUR_ABI_HERE = [
+      {
+        "inputs": [{ "internalType": "uint256", "name": "eventId", "type": "uint256" }],
+        "name": "buyTicket",
+        "outputs": [],
+        "stateMutability": "payable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          { "internalType": "string", "name": "name", "type": "string" },
+          { "internalType": "uint256", "name": "price", "type": "uint256" },
+          { "internalType": "uint256", "name": "totalTickets", "type": "uint256" }
+        ],
+        "name": "createEvent",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [{ "internalType": "uint256", "name": "eventId", "type": "uint256" }],
+        "name": "getEvent",
+        "outputs": [
+          { "internalType": "string", "name": "", "type": "string" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "address", "name": "", "type": "address" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
   </script>
 </body>
 </html>
