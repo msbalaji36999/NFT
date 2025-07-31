@@ -1,140 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>NFT Event Ticketing System</title>
+  <meta charset="UTF-8" />
+  <title>Event Ticketing System</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #0f0f0f;
-      color: #fff;
-      margin: 0;
-      padding: 40px;
+      background: #121212;
+      color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      padding: 30px;
       text-align: center;
     }
-    h1 {
-      color: #00ffcc;
-      margin-bottom: 10px;
+    h1 { color: #00ffd1; }
+    .box {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      margin: 20px auto;
+      width: 300px;
     }
-    button {
-      background-color: #00ffcc;
-      color: #000;
-      border: none;
-      padding: 12px 20px;
-      margin: 10px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    input {
+    input, button {
+      margin: 8px 0;
       padding: 10px;
-      margin: 6px;
-      width: 250px;
+      width: 90%;
       border-radius: 5px;
       border: none;
     }
-    .container {
-      background: #1c1c1c;
-      padding: 20px;
-      margin: 20px auto;
-      border-radius: 10px;
-      max-width: 500px;
-    }
-    #walletAddress {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #ccc;
+    button {
+      background-color: #00ffd1;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-
-  <h1>NFT Event Ticketing System</h1>
+  <h1>🎫 Event Ticketing</h1>
   <button onclick="connectWallet()">🔗 Connect Wallet</button>
-  <div id="walletAddress">Wallet not connected</div>
+  <p id="walletAddress">Wallet not connected</p>
 
-  <div class="container">
-    <h2>Create Event</h2>
-    <input type="text" id="eventName" placeholder="Event Name"><br>
-    <input type="number" id="eventPrice" placeholder="Ticket Price in ETH"><br>
-    <input type="number" id="totalTickets" placeholder="Total Tickets"><br>
+  <div class="box">
+    <h3>Create Event</h3>
+    <input id="eventName" placeholder="Event Name" />
+    <input id="eventPrice" type="number" placeholder="Price in ETH" />
+    <input id="eventTickets" type="number" placeholder="Total Tickets" />
     <button onclick="createEvent()">➕ Create</button>
   </div>
 
-  <div class="container">
-    <h2>Buy Ticket</h2>
-    <input type="number" id="buyEventId" placeholder="Event ID"><br>
-    <button onclick="buyTicket()">🎟 Buy Ticket</button>
+  <div class="box">
+    <h3>Buy Ticket</h3>
+    <input id="buyEventId" type="number" placeholder="Event ID" />
+    <button onclick="buyTicket()">🎟 Buy</button>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
   <script>
     let provider;
     let signer;
     let contract;
 
     const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
-    const abi = [/* paste your ABI here */];
+    const abi = [/* PASTE YOUR ABI HERE EXACTLY AS YOU SENT ABOVE */];
 
     async function connectWallet() {
       if (window.ethereum) {
         try {
           provider = new ethers.BrowserProvider(window.ethereum);
+          await provider.send("eth_requestAccounts", []);
           signer = await provider.getSigner();
           const address = await signer.getAddress();
           document.getElementById("walletAddress").textContent = "Connected: " + address;
           contract = new ethers.Contract(contractAddress, abi, signer);
         } catch (err) {
           console.error(err);
-          alert("Failed to connect wallet");
+          alert("❌ Failed to connect wallet.");
         }
       } else {
-        alert("MetaMask is not installed!");
+        alert("🦊 MetaMask not found. Please install it.");
       }
     }
 
     async function createEvent() {
-      if (!contract) return alert("Connect wallet first!");
-
+      if (!contract) return alert("Connect wallet first.");
       const name = document.getElementById("eventName").value;
       const price = document.getElementById("eventPrice").value;
-      const tickets = document.getElementById("totalTickets").value;
+      const tickets = document.getElementById("eventTickets").value;
 
-      if (!name || !price || !tickets) return alert("Fill all fields!");
+      if (!name || !price || !tickets) return alert("Fill all fields.");
 
       try {
         const tx = await contract.createEvent(name, ethers.parseEther(price), tickets);
         await tx.wait();
-        alert("Event created successfully!");
+        alert("✅ Event created!");
       } catch (err) {
         console.error(err);
-        alert("Failed to create event.");
+        alert("❌ Event creation failed.");
       }
     }
 
     async function buyTicket() {
-      if (!contract) return alert("Connect wallet first!");
-
+      if (!contract) return alert("Connect wallet first.");
       const eventId = document.getElementById("buyEventId").value;
-      if (!eventId) return alert("Enter event ID");
+      if (!eventId) return alert("Enter event ID.");
 
       try {
         const event = await contract.getEvent(eventId);
-        const price = event[1];
+        const price = event[1]; // price in wei
         const tx = await contract.buyTicket(eventId, { value: price });
         await tx.wait();
-        alert("Ticket purchased successfully!");
+        alert("✅ Ticket purchased!");
       } catch (err) {
         console.error(err);
-        alert("Purchase failed!");
+        alert("❌ Ticket purchase failed.");
       }
     }
-
-    // Paste your ABI from the last message here 👇
-    const abiText = `PUT-YOUR-ABI-HERE`; // Due to long length, paste it in place
-    const abiParsed = JSON.parse(abiText);
-    abi.splice(0, abi.length, ...abiParsed); // load ABI
-
   </script>
 </body>
 </html>
