@@ -1,170 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>NFT Event Ticketing</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <title>NFT Event Ticketing System</title>
   <style>
     body {
-      background: #121212;
-      color: white;
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f0f0f;
+      color: #fff;
       margin: 0;
-      padding: 0;
-    }
-    header {
-      background: #1f1f1f;
-      padding: 20px;
+      padding: 40px;
       text-align: center;
     }
     h1 {
-      margin: 0;
+      color: #00ffcc;
+      margin-bottom: 10px;
     }
-    .container {
-      max-width: 600px;
-      margin: 30px auto;
-      padding: 20px;
-      background: #1e1e1e;
-      border-radius: 10px;
-    }
-    input, button {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
+    button {
+      background-color: #00ffcc;
+      color: #000;
+      border: none;
+      padding: 12px 20px;
+      margin: 10px;
+      border-radius: 8px;
       font-size: 16px;
+      cursor: pointer;
+    }
+    input {
+      padding: 10px;
+      margin: 6px;
+      width: 250px;
       border-radius: 5px;
       border: none;
     }
-    input {
-      background: #2c2c2c;
-      color: white;
+    .container {
+      background: #1c1c1c;
+      padding: 20px;
+      margin: 20px auto;
+      border-radius: 10px;
+      max-width: 500px;
     }
-    button {
-      background: #4caf50;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #45a049;
-    }
-    #status {
-      margin-top: 15px;
-      color: lightgreen;
-      font-weight: bold;
+    #walletAddress {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <h1>NFT Event Ticketing System</h1>
-    <button onclick="connectWallet()">Connect Wallet</button>
-  </header>
+  <h1>NFT Event Ticketing System</h1>
+  <button onclick="connectWallet()">🔗 Connect Wallet</button>
+  <div id="walletAddress">Wallet not connected</div>
 
   <div class="container">
     <h2>Create Event</h2>
-    <input id="eventName" placeholder="Event Name">
-    <input id="ticketPrice" placeholder="Ticket Price (in MATIC)">
-    <input id="totalTickets" placeholder="Total Tickets">
-    <button onclick="createEvent()">Create Event</button>
-
-    <h2>Buy Ticket</h2>
-    <input id="eventId" placeholder="Event ID to buy">
-    <button onclick="buyTicket()">Buy Ticket</button>
-
-    <div id="status"></div>
+    <input type="text" id="eventName" placeholder="Event Name"><br>
+    <input type="number" id="eventPrice" placeholder="Ticket Price in ETH"><br>
+    <input type="number" id="totalTickets" placeholder="Total Tickets"><br>
+    <button onclick="createEvent()">➕ Create</button>
   </div>
 
-  <!-- Use Ethers v5 (v6 may cause breaking changes) -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-  <script>
-    let provider, signer, contract;
+  <div class="container">
+    <h2>Buy Ticket</h2>
+    <input type="number" id="buyEventId" placeholder="Event ID"><br>
+    <button onclick="buyTicket()">🎟 Buy Ticket</button>
+  </div>
 
-    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce"; // Replace if needed
-    const abi = [
-      {
-        "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],
-        "name":"buyTicket","outputs":[],"stateMutability":"payable","type":"function"
-      },
-      {
-        "inputs":[
-          {"internalType":"string","name":"name","type":"string"},
-          {"internalType":"uint256","name":"price","type":"uint256"},
-          {"internalType":"uint256","name":"totalTickets","type":"uint256"}],
-        "name":"createEvent","outputs":[],"stateMutability":"nonpayable","type":"function"
-      },
-      {
-        "inputs":[{"internalType":"uint256","name":"eventId","type":"uint256"}],
-        "name":"getEvent","outputs":[
-          {"internalType":"string","name":"","type":"string"},
-          {"internalType":"uint256","name":"","type":"uint256"},
-          {"internalType":"uint256","name":"","type":"uint256"},
-          {"internalType":"uint256","name":"","type":"uint256"},
-          {"internalType":"address","name":"","type":"address"}],
-        "stateMutability":"view","type":"function"
-      }
-    ];
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.min.js"></script>
+  <script>
+    let provider;
+    let signer;
+    let contract;
+
+    const contractAddress = "0x366a5265aC81C35efA06133A0f2EaC3c770225ce";
+    const abi = [/* paste your ABI here */];
 
     async function connectWallet() {
       if (window.ethereum) {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        contract = new ethers.Contract(contractAddress, abi, signer);
-        document.getElementById("status").innerText = "✅ Wallet connected";
-        console.log("Wallet connected");
+        try {
+          provider = new ethers.BrowserProvider(window.ethereum);
+          signer = await provider.getSigner();
+          const address = await signer.getAddress();
+          document.getElementById("walletAddress").textContent = "Connected: " + address;
+          contract = new ethers.Contract(contractAddress, abi, signer);
+        } catch (err) {
+          console.error(err);
+          alert("Failed to connect wallet");
+        }
       } else {
-        alert("Please install MetaMask!");
+        alert("MetaMask is not installed!");
       }
     }
 
     async function createEvent() {
-      if (!contract) {
-        alert("Connect wallet first!");
-        return;
-      }
+      if (!contract) return alert("Connect wallet first!");
+
       const name = document.getElementById("eventName").value;
-      const price = document.getElementById("ticketPrice").value;
-      const total = document.getElementById("totalTickets").value;
+      const price = document.getElementById("eventPrice").value;
+      const tickets = document.getElementById("totalTickets").value;
+
+      if (!name || !price || !tickets) return alert("Fill all fields!");
 
       try {
-        const tx = await contract.createEvent(
-          name,
-          ethers.utils.parseEther(price),
-          parseInt(total)
-        );
-        document.getElementById("status").innerText = "Creating event...";
+        const tx = await contract.createEvent(name, ethers.parseEther(price), tickets);
         await tx.wait();
-        document.getElementById("status").innerText = "✅ Event created!";
+        alert("Event created successfully!");
       } catch (err) {
         console.error(err);
-        document.getElementById("status").innerText = "❌ Failed to create event.";
+        alert("Failed to create event.");
       }
     }
 
     async function buyTicket() {
-      if (!contract) {
-        alert("Connect wallet first!");
-        return;
-      }
-      const eventId = document.getElementById("eventId").value;
+      if (!contract) return alert("Connect wallet first!");
+
+      const eventId = document.getElementById("buyEventId").value;
+      if (!eventId) return alert("Enter event ID");
 
       try {
-        const eventData = await contract.getEvent(eventId);
-        const ticketPrice = eventData[1]; // price is second item
-
-        const tx = await contract.buyTicket(eventId, {
-          value: ticketPrice
-        });
-        document.getElementById("status").innerText = "Buying ticket...";
+        const event = await contract.getEvent(eventId);
+        const price = event[1];
+        const tx = await contract.buyTicket(eventId, { value: price });
         await tx.wait();
-        document.getElementById("status").innerText = "✅ Ticket purchased!";
+        alert("Ticket purchased successfully!");
       } catch (err) {
         console.error(err);
-        document.getElementById("status").innerText = "❌ Failed to buy ticket.";
+        alert("Purchase failed!");
       }
     }
-  </script>
 
+    // Paste your ABI from the last message here 👇
+    const abiText = `PUT-YOUR-ABI-HERE`; // Due to long length, paste it in place
+    const abiParsed = JSON.parse(abiText);
+    abi.splice(0, abi.length, ...abiParsed); // load ABI
+
+  </script>
 </body>
 </html>
