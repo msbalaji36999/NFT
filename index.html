@@ -3,78 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NFT Event Ticketing</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/web3modal@2.3.2/dist/index.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <title>Connect to Amoy Testnet</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+    }
+    h1 {
+      margin-top: 60px;
+      font-size: 2em;
+      color: #333;
+    }
+    #connectButton {
+      margin-top: 20px;
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #8247e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #connectButton:hover {
+      background-color: #5d34b3;
+    }
+    #walletAddress {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
-  <h1>NFT Event Ticketing</h1>
 
-  <button id="connectWallet">Connect Wallet</button>
-  <p><strong>Wallet Address:</strong> <span id="walletAddress">Not connected</span></p>
-
-  <h3>Buy Ticket</h3>
-  <input type="text" id="ticketURI" placeholder="Enter ticket metadata IPFS URI" />
-  <button id="buyTicketBtn">Buy Ticket</button>
-
-  <h3>Generate Ticket QR Code</h3>
-  <input type="number" id="ticketIdInput" placeholder="Enter Ticket ID" />
-  <button onclick="generateQR()">Generate QR</button>
-  <div id="qrcode"></div>
+  <h1>Polygon Amoy Testnet Connect</h1>
+  <button id="connectButton">Connect Wallet</button>
+  <div id="walletAddress"></div>
 
   <script>
-    let provider;
-    let signer;
-    let contract;
-    let account;
+    const connectButton = document.getElementById('connectButton');
+    const walletAddressDiv = document.getElementById('walletAddress');
 
-    const contractAddress = "YOUR_CONTRACT_ADDRESS";
-    const contractABI = [
-      // Paste your EventTicketNFT ABI here
-    ];
+    const amoyNetwork = {
+      chainId: '0x13882', // 80002 in hex
+      chainName: 'Polygon Amoy Testnet',
+      nativeCurrency: {
+        name: 'MATIC',
+        symbol: 'MATIC',
+        decimals: 18
+      },
+      rpcUrls: ['https://rpc-amoy.polygon.technology/'],
+      blockExplorerUrls: ['https://www.oklink.com/amoy']
+    };
 
-    document.getElementById("connectWallet").addEventListener("click", async () => {
-      if (window.ethereum) {
-        provider = new ethers.BrowserProvider(window.ethereum);
-        await window.ethereum.request({ method: "eth_requestAccounts" });
-        signer = await provider.getSigner();
-        account = await signer.getAddress();
-        document.getElementById("walletAddress").textContent = account;
+    async function connectWallet() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          // Request wallet connection
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
 
-        contract = new ethers.Contract(contractAddress, contractABI, signer);
+          // Switch to Amoy Testnet
+          await window.ethereum.request({
+            method: 'wallet_addEthereumChain',
+            params: [amoyNetwork],
+          });
+
+          walletAddressDiv.textContent = 'Connected: ' + accounts[0];
+        } catch (error) {
+          console.error('Error connecting:', error);
+          alert('Failed to connect. Check console for details.');
+        }
       } else {
-        alert("MetaMask not found. Please install it.");
+        alert('MetaMask is not installed. Please install MetaMask to continue.');
       }
-    });
-
-    document.getElementById("buyTicketBtn").addEventListener("click", async () => {
-      const uri = document.getElementById("ticketURI").value;
-      if (!contract || !uri) return alert("Connect wallet and provide metadata URI");
-
-      const price = await contract.ticketPrice();
-      const tx = await contract.buyTicket(uri, { value: price });
-      await tx.wait();
-      alert("Ticket Purchased!");
-    });
-
-    function generateQR() {
-      const ticketId = document.getElementById("ticketIdInput").value;
-      if (!ticketId || !account || !contractAddress) {
-        alert("Missing ticket ID or wallet not connected");
-        return;
-      }
-
-      const data = JSON.stringify({
-        ticketId: ticketId,
-        owner: account,
-        contract: contractAddress
-      });
-
-      QRCode.toCanvas(document.getElementById("qrcode"), data, function (error) {
-        if (error) console.error(error);
-      });
     }
+
+    connectButton.addEventListener('click', connectWallet);
   </script>
+
 </body>
 </html>
